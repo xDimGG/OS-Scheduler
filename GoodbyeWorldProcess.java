@@ -1,8 +1,8 @@
 public class GoodbyeWorldProcess extends UserlandProcess {
 	@Override
 	public RunResult run() {
-		RunResult result = new RunResult();
 		System.out.println("Goodbye World");
-		return result.complete();
+		OS.sleep(4000);
+		return new RunResult(1, false);
 	}
 }
