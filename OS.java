@@ -3,7 +3,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class OS {
-	private static OSInterface instance = new BasicScheduler();
+	private static OSInterface instance = new PriorityScheduler();
 	private static List<OSCall> osCalls = new LinkedList<>();
 
 	private OS() { }
@@ -20,8 +20,8 @@ public class OS {
 		return osCalls.iterator();
 	}
 
-	public static int CreateProcess(UserlandProcess myNewProcess) {
-		return getInstance().CreateProcess(myNewProcess);
+	public static int CreateProcess(UserlandProcess myNewProcess, PriorityEnum priority) {
+		return getInstance().CreateProcess(myNewProcess, priority);
 	}
 
 	public static boolean DeleteProcess(int processId) {
@@ -29,16 +29,18 @@ public class OS {
 	}
 	
 	public static void run() {
-		BasicScheduler scheduler = new BasicScheduler();
-		scheduler.CreateProcess(new HelloWorldProcess());
-		scheduler.CreateProcess(new GoodbyeWorldProcess());
-		scheduler.run();
+		// Background process, never runs to timeout
+		CreateProcess(new Background(), PriorityEnum.Background);
+		// Interactive process, never runs to timeout
+		CreateProcess(new Interactive(), PriorityEnum.Interactive);
+		// Realtime process, always runs to timeout, should become interactive then background
+		CreateProcess(new Realtime(), PriorityEnum.RealTime);
+		// Realtime process, never runs to timeout, sleeps for 20 ms
+		CreateProcess(new HelloWorldProcess(), PriorityEnum.RealTime);
+		getInstance().run();
 	}
 
 	public static void sleep(int ms) {
-		var call = new OSCall();
-		call.fn = OSCallFn.SLEEP;
-		call.intArg0 = ms;
-		osCalls.add(call);
+		getInstance().Sleep(ms);
 	}
 }

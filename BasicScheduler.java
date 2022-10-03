@@ -3,7 +3,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
 
-public class BasicScheduler implements OSInterface {
+public class BasicScheduler {
 	private int nextPID = 1;
 	private HashMap<Integer, KernelandProcess> processes = new HashMap<>();
 	private int clock = 0; // OS Time
@@ -13,9 +13,8 @@ public class BasicScheduler implements OSInterface {
 	/**
 	 * Returns the process ID of the new process
 	 */
-	@Override
 	public int CreateProcess(UserlandProcess myNewProcess) {
-		KernelandProcess kp = new KernelandProcess(myNewProcess, nextPID);
+		KernelandProcess kp = new KernelandProcess(myNewProcess, nextPID, null);
 		nextPID++;
 		processes.put(kp.pid, kp);
 		return kp.pid;
@@ -24,7 +23,6 @@ public class BasicScheduler implements OSInterface {
 	/**
 	 * Returns true if the process existed and was deleted
 	 */
-	@Override
 	public boolean DeleteProcess(int processId) {
 		return processes.remove(processId) != null;
 	}
