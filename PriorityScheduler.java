@@ -54,7 +54,9 @@ public class PriorityScheduler implements OSInterface {
 	public boolean DeleteProcess(int processId) {
 		KernelandProcess kp = processes.get(processId);
 		if (kp == null) return false;
-		enumToQueue(kp.priority).remove(kp); // Remove process from run queue
+		if (!enumToQueue(kp.priority).remove(kp)) { // Remove process from run queue
+			waitList.remove(kp); // If nothing was removed, remove it from the wait list
+		}
 		processes.remove(processId); // Remove process from process list
 		return true;
 	}
