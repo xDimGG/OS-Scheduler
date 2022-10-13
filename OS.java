@@ -4,20 +4,11 @@ import java.util.List;
 
 public class OS {
 	private static OSInterface instance = new PriorityScheduler();
-	private static List<OSCall> osCalls = new LinkedList<>();
 
 	private OS() { }
 
 	public static OSInterface getInstance() {
 		return instance;
-	}
-
-	public static void clearOSCalls() {
-		osCalls = new LinkedList<>();
-	}
-
-	public static Iterator<OSCall> getOSCalls() {
-		return osCalls.iterator();
 	}
 
 	public static int CreateProcess(UserlandProcess myNewProcess, PriorityEnum priority) {
