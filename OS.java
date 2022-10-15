@@ -1,7 +1,3 @@
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
 public class OS {
 	private static OSInterface instance = new PriorityScheduler();
 
@@ -21,17 +17,39 @@ public class OS {
 	
 	public static void run() {
 		// Background process, never runs to timeout
-		CreateProcess(new Background(), PriorityEnum.Background);
+		// CreateProcess(new Background(), PriorityEnum.Background);
 		// Interactive process, never runs to timeout
-		CreateProcess(new Interactive(), PriorityEnum.Interactive);
+		// CreateProcess(new Interactive(), PriorityEnum.Interactive);
 		// Realtime process, always runs to timeout, should become interactive then background
-		CreateProcess(new Realtime(), PriorityEnum.RealTime);
+		// CreateProcess(new Realtime(), PriorityEnum.RealTime);
 		// Realtime process, never runs to timeout, sleeps for 20 ms
-		CreateProcess(new HelloWorldProcess(), PriorityEnum.RealTime);
+		// CreateProcess(new HelloWorldProcess(), PriorityEnum.RealTime);
+		CreateProcess(new PipeTest(), PriorityEnum.RealTime);
+		CreateProcess(new FSTest(), PriorityEnum.Background);
 		getInstance().run();
 	}
 
-	public static void sleep(int ms) {
+	public static void Sleep(int ms) {
 		getInstance().Sleep(ms);
+	}
+
+	public static int Open(String s) throws Exception {
+		return getInstance().Open(s);
+	}
+
+	public static void Close(int id) throws Exception {
+		getInstance().Close(id);
+	}
+
+	public static byte[] Read(int id, int size) throws Exception {
+		return getInstance().Read(id, size);
+	}
+
+	public static void Seek(int id, int to) throws Exception {
+		getInstance().Seek(id, to);
+	}
+
+	public static int Write(int id, byte[] data) throws Exception {
+		return getInstance().Write(id, data);
 	}
 }

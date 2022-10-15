@@ -6,4 +6,3 @@ public interface ProcessInterface {
 	void Sleep(int milliseconds);
 	void run();
 }
-

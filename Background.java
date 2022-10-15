@@ -1,6 +1,5 @@
 public class Background extends UserlandProcess {
-	@Override
-	public RunResult run() {
+	public RunResult run() throws Exception {
 		System.out.println("Background");
 		return new RunResult(1, false);
 	}

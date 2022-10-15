@@ -2,12 +2,16 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PriorityScheduler implements OSInterface {
 	private int nextPID = 1;
 	private HashMap<Integer, KernelandProcess> processes = new HashMap<>();
 	private int _processToSleep = 0;
+	private KernelandProcess _currentProcess;
 	private int clock = 0; // OS Time
+	private VFS vfs = new VFS();
 	private Queue<KernelandProcess> realtimeQueue = new LinkedList<>();
 	private Queue<KernelandProcess> interactiveQueue = new LinkedList<>();
 	private Queue<KernelandProcess> backgroundQueue = new LinkedList<>();
@@ -38,7 +42,6 @@ public class PriorityScheduler implements OSInterface {
 	/**
 	 * Returns the process ID of the new process
 	 */
-	@Override
 	public int CreateProcess(UserlandProcess myNewProcess, PriorityEnum priority) {
 		KernelandProcess kp = new KernelandProcess(myNewProcess, nextPID, priority);
 		nextPID++;
@@ -50,10 +53,15 @@ public class PriorityScheduler implements OSInterface {
 	/**
 	 * Returns true if the process existed and was deleted
 	 */
-	@Override
 	public boolean DeleteProcess(int processId) {
 		KernelandProcess kp = processes.get(processId);
 		if (kp == null) return false;
+		for (Integer id : kp.openDevices) {
+			try {
+				Close(id);
+			} catch (Exception e) {}
+		}
+
 		if (!enumToQueue(kp.priority).remove(kp)) { // Remove process from run queue
 			waitList.remove(kp); // If nothing was removed, remove it from the wait list
 		}
@@ -61,12 +69,10 @@ public class PriorityScheduler implements OSInterface {
 		return true;
 	}
 
-	@Override
 	public void Sleep(int milliseconds) {
 		_processToSleep = milliseconds;
 	}
 
-	@Override
 	public void run() {
 		// Endless run loop
 		while (true) {
@@ -87,18 +93,24 @@ public class PriorityScheduler implements OSInterface {
 			}
 
 			KernelandProcess kp = enumToQueue(selectPriority()).remove();
-			RunResult rr = kp.userlandProcess.run();
-			clock += rr.millisecondsUsed;
-			if (rr.ranToTimeout) kp.timesRanToTimeoutConsecutively++;
-			else kp.timesRanToTimeoutConsecutively = 0;
+			_currentProcess = kp;
+			RunResult rr;
+			try {
+				rr = kp.userlandProcess.run();
+				clock += rr.millisecondsUsed;
+				if (rr.ranToTimeout) kp.timesRanToTimeoutConsecutively++;
+				else kp.timesRanToTimeoutConsecutively = 0;
 
-			if (kp.timesRanToTimeoutConsecutively >= 5) {
-				kp.timesRanToTimeoutConsecutively = 0;
-				if (kp.priority == PriorityEnum.RealTime) {
-					kp.priority = PriorityEnum.Interactive;
-				} else if (kp.priority == PriorityEnum.Interactive) {
-					kp.priority = PriorityEnum.Background;
+				if (kp.timesRanToTimeoutConsecutively >= 5) {
+					kp.timesRanToTimeoutConsecutively = 0;
+					if (kp.priority == PriorityEnum.RealTime) {
+						kp.priority = PriorityEnum.Interactive;
+					} else if (kp.priority == PriorityEnum.Interactive) {
+						kp.priority = PriorityEnum.Background;
+					}
 				}
+			} catch (Exception e) {
+				Logger.getAnonymousLogger().log(Level.SEVERE, "an exception was thrown", e);
 			}
 
 			Boolean requeue = true;
@@ -116,5 +128,28 @@ public class PriorityScheduler implements OSInterface {
 				enumToQueue(kp.priority).add(kp);
 			}
 		}
+	}
+
+	public int Open(String s) throws Exception {
+		int id = vfs.Open(s);
+		_currentProcess.openDevices.add(id);
+		return id;
+	}
+
+	public void Close(int id) throws Exception {
+		vfs.Close(id);
+		_currentProcess.openDevices.remove((Object) id);
+	}
+
+	public byte[] Read(int id, int size) throws Exception {
+		return vfs.Read(id, size);
+	}
+
+	public void Seek(int id, int to) throws Exception {
+		vfs.Seek(id, to);
+	}
+
+	public int Write(int id, byte[] data) throws Exception {
+		return vfs.Write(id, data);
 	}
 }
