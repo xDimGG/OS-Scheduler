@@ -119,6 +119,7 @@ public class PriorityScheduler implements OSInterface {
 			} catch (RescheduleException e) {
 				Logger.getAnonymousLogger().log(Level.SEVERE, "a reschedule exception was thrown", e);
 				reschedule = false;
+				DeleteProcess(_currentProcess.pid);
 			} catch (Exception e) {
 				Logger.getAnonymousLogger().log(Level.SEVERE, "an exception was thrown", e);
 			}
