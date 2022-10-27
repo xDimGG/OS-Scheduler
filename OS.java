@@ -26,9 +26,9 @@ public class OS {
 		// CreateProcess(new HelloWorldProcess(), PriorityEnum.RealTime);
 		// CreateProcess(new PipeTest(), PriorityEnum.RealTime);
 		// CreateProcess(new FSTest(), PriorityEnum.Background);
-		CreateProcess(new MemTest("a"), PriorityEnum.RealTime);
-		CreateProcess(new MemTest("b"), PriorityEnum.RealTime);
-		CreateProcess(new MemTest("c"), PriorityEnum.RealTime);
+		CreateProcess(new TestDevices("a"), PriorityEnum.RealTime);
+		CreateProcess(new TestDevices("b"), PriorityEnum.RealTime);
+		CreateProcess(new TestDevices("c"), PriorityEnum.RealTime);
 		getInstance().run();
 	}
 
