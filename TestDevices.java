@@ -1,9 +1,9 @@
-public class MemTest extends UserlandProcess {
+public class TestDevices extends UserlandProcess {
 	public String label;
 
 	private int addr = -1;
 
-	public MemTest(String label) {
+	public TestDevices(String label) {
 		this.label = label;
 	}
 
