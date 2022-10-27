@@ -24,8 +24,11 @@ public class OS {
 		// CreateProcess(new Realtime(), PriorityEnum.RealTime);
 		// Realtime process, never runs to timeout, sleeps for 20 ms
 		// CreateProcess(new HelloWorldProcess(), PriorityEnum.RealTime);
-		CreateProcess(new PipeTest(), PriorityEnum.RealTime);
-		CreateProcess(new FSTest(), PriorityEnum.Background);
+		// CreateProcess(new PipeTest(), PriorityEnum.RealTime);
+		// CreateProcess(new FSTest(), PriorityEnum.Background);
+		CreateProcess(new MemTest("a"), PriorityEnum.RealTime);
+		CreateProcess(new MemTest("b"), PriorityEnum.RealTime);
+		CreateProcess(new MemTest("c"), PriorityEnum.RealTime);
 		getInstance().run();
 	}
 
@@ -51,5 +54,17 @@ public class OS {
 
 	public static int Write(int id, byte[] data) throws Exception {
 		return getInstance().Write(id, data);
+	}
+
+	public static void WriteMemory(int address, byte value) throws RescheduleException {
+		getInstance().WriteMemory(address, value);
+	}
+
+	public static byte ReadMemory(int address) throws RescheduleException {
+		return getInstance().ReadMemory(address);
+	}
+
+	public static int sbrk(int amount) throws RescheduleException {
+		return getInstance().sbrk(amount);
 	}
 }

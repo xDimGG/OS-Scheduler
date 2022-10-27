@@ -16,12 +16,17 @@ public class PriorityScheduler implements OSInterface {
 	private Queue<KernelandProcess> interactiveQueue = new LinkedList<>();
 	private Queue<KernelandProcess> backgroundQueue = new LinkedList<>();
 	private LinkedList<KernelandProcess> waitList  = new LinkedList<>();
+	private MemoryManagement mem = new MemoryManagement();
 
 	private Queue<KernelandProcess> enumToQueue(PriorityEnum priority) {
 		if (priority == PriorityEnum.RealTime) return realtimeQueue;
 		if (priority == PriorityEnum.Interactive) return interactiveQueue;
 		if (priority == PriorityEnum.Background) return backgroundQueue;
 		return null;
+	}
+
+	public KernelandProcess getCurrentProcess() {
+		return _currentProcess;
 	}
 
 	// Brute force random queue selection
@@ -56,6 +61,7 @@ public class PriorityScheduler implements OSInterface {
 	public boolean DeleteProcess(int processId) {
 		KernelandProcess kp = processes.get(processId);
 		if (kp == null) return false;
+		mem.freePages();
 		for (Integer id : kp.openDevices) {
 			try {
 				Close(id);
@@ -95,6 +101,7 @@ public class PriorityScheduler implements OSInterface {
 			KernelandProcess kp = enumToQueue(selectPriority()).remove();
 			_currentProcess = kp;
 			RunResult rr;
+			Boolean reschedule = true;
 			try {
 				rr = kp.userlandProcess.run();
 				clock += rr.millisecondsUsed;
@@ -109,22 +116,26 @@ public class PriorityScheduler implements OSInterface {
 						kp.priority = PriorityEnum.Background;
 					}
 				}
+			} catch (RescheduleException e) {
+				Logger.getAnonymousLogger().log(Level.SEVERE, "a reschedule exception was thrown", e);
+				reschedule = false;
 			} catch (Exception e) {
 				Logger.getAnonymousLogger().log(Level.SEVERE, "an exception was thrown", e);
 			}
 
-			Boolean requeue = true;
+			// Clear TLB cache
+			mem.invalidateTLB();
 
 			// Act on sleep call
-			if (_processToSleep > 0) {
+			if (reschedule && _processToSleep > 0) {
 				kp.sleepUntil = clock + _processToSleep;
 				waitList.add(kp);
-				requeue = false;
+				reschedule = false;
 			}
 
 			_processToSleep = 0;
 
-			if (requeue) {
+			if (reschedule) {
 				enumToQueue(kp.priority).add(kp);
 			}
 		}
@@ -151,5 +162,17 @@ public class PriorityScheduler implements OSInterface {
 
 	public int Write(int id, byte[] data) throws Exception {
 		return vfs.Write(id, data);
+	}
+
+	public void WriteMemory(int address, byte value) throws RescheduleException {
+		mem.WriteMemory(address, value);
+	}
+
+	public byte ReadMemory(int address) throws RescheduleException {
+		return mem.ReadMemory(address);
+	}
+
+	public int sbrk(int amount) throws RescheduleException {
+		return mem.sbrk(amount);
 	}
 }
