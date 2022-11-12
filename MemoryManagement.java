@@ -22,6 +22,13 @@ public class MemoryManagement implements MemoryInterface {
 		}
 	}
 
+	private void clearPage(int physicalPage) {
+		inUse.clear(physicalPage);
+		for (int i = 0; i < PAGE_SIZE; i++) {
+			memory[physicalPage][i] = 0;
+		}
+	}
+
 	private void stash(VirtualToPhysicalMapping vtp) {
 		try {
 			// If the page is not on disk or it is dirty
@@ -30,6 +37,8 @@ public class MemoryManagement implements MemoryInterface {
 				vtp.diskPage = os.getVFS().Write(swapfile, memory[vtp.physicalPage]) - PAGE_SIZE;
 				// Mark mapping as clean
 				vtp.isDirty = false;
+				// Clear memory
+				clearPage(vtp.physicalPage);
 			}
 
 			vtp.physicalPage = -1;
@@ -137,8 +146,9 @@ public class MemoryManagement implements MemoryInterface {
 	public void freePages() {
 		KernelandProcess proc = OS.getInstance().getCurrentProcess();
 		for (var p : proc.pages) {
-			if (p == null || p.physicalPage == -1) break;
-			inUse.clear(p.physicalPage);
+			if (p.physicalPage != -1) {
+				clearPage(p.physicalPage);
+			}
 		}
 	}
 }
