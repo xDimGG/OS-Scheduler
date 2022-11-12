@@ -47,8 +47,10 @@ public class FakeFileSystem implements Device {
 
 	public int Write(int id, byte[] data) throws IOException {
 		if (id >= 0 && id < MAX_DEVICES && arr[id] != null) {
-			arr[id].write(data);
-			return data.length;
+			if (data != null) {
+				arr[id].write(data);
+			}
+			return (int) arr[id].getFilePointer();
 		}
 
 		return -1;

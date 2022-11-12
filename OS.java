@@ -1,10 +1,17 @@
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class OS {
 	private static OSInterface instance = new PriorityScheduler();
 
-	private OS() { }
-
 	public static OSInterface getInstance() {
 		return instance;
+	}
+
+	// Is only called when something causes the whole program to fail (e.g. no disk space)
+	public static void panic(Exception e) {
+		Logger.getAnonymousLogger().log(Level.SEVERE, "system panic", e);
+		System.exit(1);
 	}
 
 	public static int CreateProcess(UserlandProcess myNewProcess, PriorityEnum priority) {
@@ -26,9 +33,10 @@ public class OS {
 		// CreateProcess(new HelloWorldProcess(), PriorityEnum.RealTime);
 		// CreateProcess(new PipeTest(), PriorityEnum.RealTime);
 		// CreateProcess(new FSTest(), PriorityEnum.Background);
-		CreateProcess(new TestDevices("a"), PriorityEnum.RealTime);
-		CreateProcess(new TestDevices("b"), PriorityEnum.RealTime);
-		CreateProcess(new TestDevices("c"), PriorityEnum.RealTime);
+		CreateProcess(new MemoryHog(), PriorityEnum.RealTime);
+		// CreateProcess(new TestDevices("a"), PriorityEnum.RealTime);
+		// CreateProcess(new TestDevices("b"), PriorityEnum.RealTime);
+		// CreateProcess(new TestDevices("c"), PriorityEnum.RealTime);
 		getInstance().run();
 	}
 

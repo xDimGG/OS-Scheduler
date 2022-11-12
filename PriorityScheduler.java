@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -12,11 +13,19 @@ public class PriorityScheduler implements OSInterface {
 	private KernelandProcess _currentProcess;
 	private int clock = 0; // OS Time
 	private VFS vfs = new VFS();
-	private Queue<KernelandProcess> realtimeQueue = new LinkedList<>();
-	private Queue<KernelandProcess> interactiveQueue = new LinkedList<>();
-	private Queue<KernelandProcess> backgroundQueue = new LinkedList<>();
+	private LinkedList<KernelandProcess> realtimeQueue = new LinkedList<>();
+	private LinkedList<KernelandProcess> interactiveQueue = new LinkedList<>();
+	private LinkedList<KernelandProcess> backgroundQueue = new LinkedList<>();
 	private LinkedList<KernelandProcess> waitList  = new LinkedList<>();
-	private MemoryManagement mem = new MemoryManagement();
+	private MemoryManagement mem;
+
+	PriorityScheduler() {
+		mem = new MemoryManagement(this);
+	}
+
+	public VFS getVFS() {
+		return vfs;
+	}
 
 	private Queue<KernelandProcess> enumToQueue(PriorityEnum priority) {
 		if (priority == PriorityEnum.RealTime) return realtimeQueue;
@@ -42,6 +51,23 @@ public class PriorityScheduler implements OSInterface {
 		if (!enumToQueue(q).isEmpty()) return q;
 		// Try again if queue is empty
 		return selectPriority();
+	}
+
+	public VirtualToPhysicalMapping randomMapping() {
+		ArrayList<LinkedList<KernelandProcess>> groups = new ArrayList<>();
+		if (realtimeQueue.size() > 0) groups.add(realtimeQueue);
+		if (interactiveQueue.size() > 0) groups.add(interactiveQueue);
+		if (backgroundQueue.size() > 0) groups.add(backgroundQueue);
+		if (waitList.size() > 0) groups.add(waitList);
+
+		while (true) {
+			LinkedList<KernelandProcess> group = groups.get((int) Math.floor(groups.size() * Math.random()));
+			KernelandProcess proc = group.get((int) Math.floor(group.size() * Math.random()));
+			VirtualToPhysicalMapping vpm = proc.pages[(int) Math.floor(proc.pages.length * Math.random())];
+			if (vpm != null && vpm.physicalPage != -1) {
+				return vpm;
+			}
+		}
 	}
 
 	/**
