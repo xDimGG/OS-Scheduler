@@ -143,8 +143,7 @@ public class MemoryManagement implements MemoryInterface {
 		tlbVirtual = -1;
 	}
 
-	public void freePages() {
-		KernelandProcess proc = OS.getInstance().getCurrentProcess();
+	public void freePages(KernelandProcess proc) {
 		for (var p : proc.pages) {
 			if (p.physicalPage != -1) {
 				clearPage(p.physicalPage);

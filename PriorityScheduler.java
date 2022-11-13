@@ -87,7 +87,7 @@ public class PriorityScheduler implements OSInterface {
 	public boolean DeleteProcess(int processId) {
 		KernelandProcess kp = processes.get(processId);
 		if (kp == null) return false;
-		mem.freePages();
+		mem.freePages(kp);
 		for (Integer id : kp.openDevices) {
 			try {
 				Close(id);
