@@ -1,11 +1,11 @@
 public class MutexManager {
 	public static final int MUTEX_COUNT = 10;
 
-	private MutexData[] mutexes = new MutexData[MUTEX_COUNT];
+	private MutexObject[] mutexes = new MutexObject[MUTEX_COUNT];
 
 	public MutexManager() {
 		for (int i = 0; i < MUTEX_COUNT; i++) {
-			mutexes[i] = new MutexData();
+			mutexes[i] = new MutexObject();
 		}
 	}
 
@@ -31,7 +31,7 @@ public class MutexManager {
 	}
 
 	public boolean Lock(int pid, int mutexId) {
-		MutexData mut = mutexes[mutexId];
+		MutexObject mut = mutexes[mutexId];
 		if (mut.holder == -1) {
 			mut.holder = pid;
 		}
@@ -40,7 +40,7 @@ public class MutexManager {
 	}
 
 	public void Unlock(int pid, int mutexId) {
-		MutexData mut = mutexes[mutexId];
+		MutexObject mut = mutexes[mutexId];
 		if (mut.holder == pid) {
 			mut.holder = -1;
 		}
@@ -49,7 +49,7 @@ public class MutexManager {
 	public void ReleaseMutex(int pid, int mutexId) {
 		Unlock(pid, mutexId);
 
-		MutexData mut = mutexes[mutexId];
+		MutexObject mut = mutexes[mutexId];
 		mut.attached.remove(pid);
 		if (mut.attached.size() == 0) {
 			mut.name = "";
