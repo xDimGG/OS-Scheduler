@@ -11,6 +11,7 @@ public class KernelandProcess {
 	public int timesRanToTimeoutConsecutively = 0;
 	public LinkedList<Integer> openDevices = new LinkedList<>();
 	public VirtualToPhysicalMapping[] pages = new VirtualToPhysicalMapping[MemoryManagement.PAGE_COUNT];
+	public int awaiting = -1;
 
 	KernelandProcess(UserlandProcess _userlandProcess, int _pid, PriorityEnum _priority) {
 		this.userlandProcess = _userlandProcess;

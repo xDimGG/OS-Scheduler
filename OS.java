@@ -33,10 +33,12 @@ public class OS {
 		// CreateProcess(new HelloWorldProcess(), PriorityEnum.RealTime);
 		// CreateProcess(new PipeTest(), PriorityEnum.RealTime);
 		// CreateProcess(new FSTest(), PriorityEnum.Background);
-		CreateProcess(new MemoryHog(), PriorityEnum.RealTime);
+		// CreateProcess(new MemoryHog(), PriorityEnum.RealTime);
 		// CreateProcess(new TestDevices("a"), PriorityEnum.RealTime);
 		// CreateProcess(new TestDevices("b"), PriorityEnum.RealTime);
 		// CreateProcess(new TestDevices("c"), PriorityEnum.RealTime);
+		CreateProcess(new TestMutex("a"), PriorityEnum.Interactive);
+		CreateProcess(new TestMutex("b"), PriorityEnum.Interactive);
 		getInstance().run();
 	}
 
@@ -74,5 +76,21 @@ public class OS {
 
 	public static int sbrk(int amount) throws RescheduleException {
 		return getInstance().sbrk(amount);
+	}
+
+	public static int AttachToMutex(String name) {
+		return getInstance().AttachToMutex(name);
+	}
+
+	public static boolean Lock(int mutexId) {
+		return getInstance().Lock(mutexId);
+	}
+
+	public static void Unlock(int mutexId) {
+		getInstance().Unlock(mutexId);
+	}
+
+	public static void ReleaseMutex(int mutexId) {
+		getInstance().ReleaseMutex(mutexId);
 	}
 }

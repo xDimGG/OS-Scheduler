@@ -2,7 +2,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
-import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,10 +12,12 @@ public class PriorityScheduler implements OSInterface {
 	private KernelandProcess _currentProcess;
 	private int clock = 0; // OS Time
 	private VFS vfs = new VFS();
+	private MutexManager mut = new MutexManager();
 	private LinkedList<KernelandProcess> realtimeQueue = new LinkedList<>();
 	private LinkedList<KernelandProcess> interactiveQueue = new LinkedList<>();
 	private LinkedList<KernelandProcess> backgroundQueue = new LinkedList<>();
-	private LinkedList<KernelandProcess> waitList  = new LinkedList<>();
+	private LinkedList<KernelandProcess> sleepWaitList = new LinkedList<>();
+	private LinkedList<KernelandProcess> mutexWaitList = new LinkedList<>();
 	private MemoryManagement mem;
 
 	PriorityScheduler() {
@@ -27,7 +28,7 @@ public class PriorityScheduler implements OSInterface {
 		return vfs;
 	}
 
-	private Queue<KernelandProcess> enumToQueue(PriorityEnum priority) {
+	private LinkedList<KernelandProcess> enumToQueue(PriorityEnum priority) {
 		if (priority == PriorityEnum.RealTime) return realtimeQueue;
 		if (priority == PriorityEnum.Interactive) return interactiveQueue;
 		if (priority == PriorityEnum.Background) return backgroundQueue;
@@ -58,7 +59,7 @@ public class PriorityScheduler implements OSInterface {
 		if (realtimeQueue.size() > 0) groups.add(realtimeQueue);
 		if (interactiveQueue.size() > 0) groups.add(interactiveQueue);
 		if (backgroundQueue.size() > 0) groups.add(backgroundQueue);
-		if (waitList.size() > 0) groups.add(waitList);
+		if (sleepWaitList.size() > 0) groups.add(sleepWaitList);
 
 		while (true) {
 			LinkedList<KernelandProcess> group = groups.get((int) Math.floor(groups.size() * Math.random()));
@@ -88,6 +89,9 @@ public class PriorityScheduler implements OSInterface {
 		KernelandProcess kp = processes.get(processId);
 		if (kp == null) return false;
 		mem.freePages(kp);
+		for (int i = 0; i < MutexManager.MUTEX_COUNT; i++) {
+			mut.ReleaseMutex(processId, i);
+		}
 		for (Integer id : kp.openDevices) {
 			try {
 				Close(id);
@@ -95,7 +99,7 @@ public class PriorityScheduler implements OSInterface {
 		}
 
 		if (!enumToQueue(kp.priority).remove(kp)) { // Remove process from run queue
-			waitList.remove(kp); // If nothing was removed, remove it from the wait list
+			sleepWaitList.remove(kp); // If nothing was removed, remove it from the wait list
 		}
 		processes.remove(processId); // Remove process from process list
 		return true;
@@ -108,12 +112,12 @@ public class PriorityScheduler implements OSInterface {
 	public void run() {
 		// Endless run loop
 		while (true) {
-			// Check for any waiting processes
-			ListIterator<KernelandProcess> iter = waitList.listIterator();
+			// Check for any sleeping processes
+			ListIterator<KernelandProcess> iter = sleepWaitList.listIterator();
 			while (iter.hasNext()) {
 				KernelandProcess el = iter.next();
 				if (el.sleepUntil <= clock) {
-					enumToQueue(el.priority).add(el);
+					enumToQueue(el.priority).push(el);
 					iter.remove();
 				}
 			}
@@ -153,10 +157,16 @@ public class PriorityScheduler implements OSInterface {
 			// Clear TLB cache
 			mem.invalidateTLB();
 
+			// If the process is awaiting a mutex
+			if (reschedule && kp.awaiting != -1) {
+				mutexWaitList.add(kp);
+				reschedule = false;
+			}
+
 			// Act on sleep call
 			if (reschedule && _processToSleep > 0) {
 				kp.sleepUntil = clock + _processToSleep;
-				waitList.add(kp);
+				sleepWaitList.add(kp);
 				reschedule = false;
 			}
 
@@ -201,5 +211,42 @@ public class PriorityScheduler implements OSInterface {
 
 	public int sbrk(int amount) throws RescheduleException {
 		return mem.sbrk(amount);
+	}
+
+	private void requeueAwaiters(int mutexId) {
+		// Check for any free mutexes
+		ListIterator<KernelandProcess> iter = mutexWaitList.listIterator();
+		while (iter.hasNext()) {
+			KernelandProcess el = iter.next();
+			if (el.awaiting == mutexId) {
+				el.awaiting = -1;
+				enumToQueue(el.priority).push(el);
+				iter.remove();
+			}
+		}
+	}
+
+	public int AttachToMutex(String name) {
+		return mut.AttachToMutex(getCurrentProcess().pid, name);
+	}
+
+	public boolean Lock(int mutexId) {
+		boolean open = mut.Lock(getCurrentProcess().pid, mutexId);
+
+		if (!open) {
+			getCurrentProcess().awaiting = mutexId;
+		}
+
+		return open;
+	}
+
+	public void Unlock(int mutexId) {
+		mut.Unlock(getCurrentProcess().pid, mutexId);
+		requeueAwaiters(mutexId);
+	}
+
+	public void ReleaseMutex(int mutexId) {
+		mut.ReleaseMutex(getCurrentProcess().pid, mutexId);
+		requeueAwaiters(mutexId);
 	}
 }
