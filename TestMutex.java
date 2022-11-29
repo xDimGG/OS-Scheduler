@@ -23,6 +23,6 @@ public class TestMutex extends UserlandProcess {
 			}
 		}
 
-		return new RunResult(0, true);
+		return new RunResult(1, false);
 	}
 }
